@@ -19,6 +19,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 > "✅ CRITICAL RULES ACKNOWLEDGED - I will follow all prohibitions and requirements listed in CLAUDE.md"
 
 ### ❌ ABSOLUTE PROHIBITIONS
+
 - **NEVER** create new files in root directory → use proper module structure
 - **NEVER** write output files directly to root directory → use designated output folders
 - **NEVER** create documentation files (.md) unless explicitly requested by user
@@ -31,6 +32,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **NEVER** use naming like enhanced_, improved_, new_, v2_ → extend original files instead
 
 ### 📝 MANDATORY REQUIREMENTS
+
 - **COMMIT** after every completed task/phase - no exceptions
 - **GITHUB BACKUP** - Push to GitHub after every commit to maintain backup: `git push origin main`
 - **USE TASK AGENTS** for all long-running operations (>30 seconds) - Bash commands stop when context switches
@@ -40,6 +42,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **SINGLE SOURCE OF TRUTH** - One authoritative implementation per feature/concept
 
 ### ⚡ EXECUTION PATTERNS
+
 - **PARALLEL TASK AGENTS** - Launch multiple Task agents simultaneously for maximum efficiency
 - **SYSTEMATIC WORKFLOW** - TodoWrite → Parallel agents → Git checkpoints → GitHub backup → Test validation
 - **GITHUB BACKUP WORKFLOW** - After every commit: `git push origin main` to maintain GitHub backup
@@ -49,16 +52,19 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 > **STOP: Before starting any task, Claude Code must explicitly verify ALL points:**
 
 **Step 1: Rule Acknowledgment**
+
 - [ ] ✅ I acknowledge all critical rules in CLAUDE.md and will follow them
 
-**Step 2: Task Analysis**  
+**Step 2: Task Analysis**
+
 - [ ] Will this create files in root? → If YES, use proper module structure instead
 - [ ] Will this take >30 seconds? → If YES, use Task agents not Bash
 - [ ] Is this 3+ steps? → If YES, use TodoWrite breakdown first
 - [ ] Am I about to use grep/find/cat? → If YES, use proper tools instead
 
 **Step 3: Technical Debt Prevention (MANDATORY SEARCH FIRST)**
-- [ ] **SEARCH FIRST**: Use Grep pattern="<functionality>.*<keyword>" to find existing implementations
+
+- [ ] **SEARCH FIRST**: Use Grep pattern="functionality.*keyword" to find existing implementations
 - [ ] **CHECK EXISTING**: Read any found files to understand current functionality
 - [ ] Does similar functionality already exist? → If YES, extend existing code
 - [ ] Am I creating a duplicate class/manager? → If YES, consolidate instead
@@ -68,6 +74,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - [ ] Am I about to copy-paste code? → Extract to shared utility instead
 
 **Step 4: Session Management**
+
 - [ ] Is this a long/complex task? → If YES, plan context checkpoints
 - [ ] Have I been working >1 hour? → If YES, consider /compact or session break
 
@@ -80,7 +87,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 ### 🎯 **GITHUB SETUP PROMPT** (AUTOMATIC)
 > **⚠️ CLAUDE CODE MUST ALWAYS ASK THIS QUESTION when setting up a new project:**
 
-```
+```text
 🐙 GitHub Repository Setup
 Would you like to set up a remote GitHub repository for this project?
 
@@ -329,7 +336,8 @@ project-root/
 ### 🔧 **LANGUAGE-SPECIFIC ADAPTATIONS**
 
 **For Python AI/ML Projects:**
-```
+
+```text
 src/main/python/
 ├── __init__.py
 ├── core/              # Core ML algorithms
@@ -343,7 +351,8 @@ src/main/python/
 ```
 
 **For JavaScript/TypeScript Projects:**
-```
+
+```text
 src/main/js/ (or ts/)
 ├── index.js
 ├── core/
@@ -354,7 +363,8 @@ src/main/js/ (or ts/)
 ```
 
 **For Java Projects:**
-```
+
+```text
 src/main/java/
 ├── com/yourcompany/project/
 │   ├── core/
@@ -365,7 +375,8 @@ src/main/java/
 ```
 
 **For Multi-Language Projects:**
-```
+
+```text
 src/main/
 ├── python/     # Python components
 ├── js/         # JavaScript components
@@ -383,9 +394,10 @@ src/main/
 6. **AI/ML Ready**: Includes MLOps-focused directories for datasets, experiments, and models
 7. **Reproducibility**: Supports ML experiment tracking and model versioning
 
-### 🎯 **CLAUDE CODE INITIALIZATION COMMANDS**
+### 🎯 CLAUDE CODE INITIALIZATION COMMANDS
 
-#### 🔹 **SIMPLE PROJECT SETUP**
+#### 🔹 SIMPLE PROJECT SETUP
+
 ```bash
 # For simple scripts and utilities
 mkdir -p {src,tests,docs,output}
@@ -397,7 +409,8 @@ echo '# Project Documentation' > docs/README.md
 echo '# Output directory' > output/.gitkeep
 ```
 
-#### 🔹 **STANDARD PROJECT SETUP**
+#### 🔹 STANDARD PROJECT SETUP
+
 ```bash
 # For full-featured applications
 mkdir -p {src,docs,tools,examples,output}
@@ -410,7 +423,8 @@ mkdir -p docs/{api,user,dev}
 git init && git config --local user.name "Claude Code" && git config --local user.email "claude@anthropic.com"
 ```
 
-#### 🔹 **AI/ML PROJECT SETUP**
+#### 🔹 AI/ML PROJECT SETUP
+
 ```bash
 # For AI/ML projects with MLOps support
 mkdir -p {src,docs,tools,scripts,examples,output,logs,tmp}
@@ -428,7 +442,8 @@ mkdir -p experiments/{configs,results,logs}
 git init && git config --local user.name "Claude Code" && git config --local user.email "claude@anthropic.com"
 ```
 
-### 🎯 **SHARED INITIALIZATION STEPS**
+### 🎯 SHARED INITIALIZATION STEPS
+
 All project types continue with:
 
 ```bash
@@ -623,12 +638,13 @@ EOF
 fi
 ```
 
-### 🤖 **CLAUDE CODE POST-INITIALIZATION CHECKLIST**
+### 🤖 CLAUDE CODE POST-INITIALIZATION CHECKLIST
 
 > **After setup, Claude Code must:**
 
-1. ✅ **Display template credits**: 
-   ```
+1. ✅ **Display template credits**:
+
+   ```text
    🎯 Template by Chang Ho Chien | HC AI 說人話channel | v1.0.0
    📺 Tutorial: https://youtu.be/8Q1bRZaHH24
    ```
@@ -638,8 +654,9 @@ fi
 5. ✅ **Git status**: Verify repository initialized
 6. ✅ **Initial commit**: Stage and commit all files
 7. ✅ **GitHub backup**: If enabled, verify push succeeded
-8. ✅ **Final message**: 
-   ```
+8. ✅ **Final message**:
+
+   ```text
    ✅ Project "[PROJECT_NAME]" initialized successfully!
    📋 CLAUDE.md rules are now active
    🐙 GitHub backup: [ENABLED/DISABLED]
@@ -658,7 +675,8 @@ fi
 
 [Describe your project structure and purpose here]
 
-### 🎯 **DEVELOPMENT STATUS**
+### 🎯 DEVELOPMENT STATUS
+
 - **Setup**: [Status]
 - **Core Features**: [Status]
 - **Testing**: [Status]
@@ -671,6 +689,7 @@ fi
 ## 🎯 RULE COMPLIANCE CHECK
 
 Before starting ANY task, verify:
+
 - [ ] ✅ I acknowledge all critical rules above
 - [ ] Files go in proper module structure (not root)
 - [ ] Use Task agents for >30 second operations
@@ -685,13 +704,15 @@ Before starting ANY task, verify:
 
 ## 🚨 TECHNICAL DEBT PREVENTION
 
-### ❌ WRONG APPROACH (Creates Technical Debt):
+### ❌ WRONG APPROACH (Creates Technical Debt)
+
 ```bash
 # Creating new file without searching first
 Write(file_path="new_feature.py", content="...")
 ```
 
-### ✅ CORRECT APPROACH (Prevents Technical Debt):
+### ✅ CORRECT APPROACH (Prevents Technical Debt)
+
 ```bash
 # 1. SEARCH FIRST
 Grep(pattern="feature.*implementation", include="*.py")
@@ -703,7 +724,8 @@ Edit(file_path="existing_feature.py", old_string="...", new_string="...")
 
 ## 🧹 DEBT PREVENTION WORKFLOW
 
-### Before Creating ANY New File:
+### Before Creating ANY New File
+
 1. **🔍 Search First** - Use Grep/Glob to find existing implementations
 2. **📋 Analyze Existing** - Read and understand current patterns
 3. **🤔 Decision Tree**: Can extend existing? → DO IT | Must create new? → Document why

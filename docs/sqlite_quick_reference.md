@@ -21,6 +21,7 @@ curl http://localhost:3000/progress
 ## 📋 **核心測試命令**
 
 ### **API 測試**
+
 ```bash
 # 寫入測試
 curl -X POST localhost:3000/save-progress -H "Content-Type: application/json" -d '{"courses":[{"code":"T1","name":"測試","time":"10:00","status":"進行中"}]}'
@@ -33,6 +34,7 @@ curl localhost:3000/stats
 ```
 
 ### **資料庫驗證**
+
 ```bash
 # 查看資料
 sqlite3 progress.sqlite "SELECT * FROM progress;"
@@ -64,7 +66,7 @@ sqlite3 progress.sqlite "SELECT COUNT(*) as total FROM progress;"
 - [ ] API 寫入回傳 success:true
 - [ ] API 讀取回傳資料陣列
 - [ ] SQLite 直接查詢有資料
-- [ ] 網頁 http://localhost:3000 可訪問
+- [ ] 網頁 <http://localhost:3000> 可訪問
 - [ ] 統計功能正常運作
 
 **✅ 全部通過 = SQLite 功能正常！**

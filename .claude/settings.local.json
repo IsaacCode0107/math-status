@@ -9,7 +9,14 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(git add:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(python:*)",
+      "Bash(git checkout:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
