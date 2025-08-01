@@ -407,13 +407,8 @@
                             }
                             
                             const oldStatus = course.status;
-                            // 更新課程資料 - 暫時強制使用一個測試狀態來驗證邏輯
-                            if (course.code === '1-1_主題1') {
-                                course.status = '已完成'; // 強制設置為已完成進行測試
-                                console.log('強制設置 1-1_主題1 為已完成');
-                            } else {
-                                course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
-                            }
+                            // 更新課程資料
+                            course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
                             course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
                             course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
                             
