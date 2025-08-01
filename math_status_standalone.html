@@ -370,9 +370,40 @@
             ]
         };
 
+        // 清理損壞的 localStorage 資料
+        function clearCorruptedData() {
+            try {
+                const savedData = localStorage.getItem('mathProgressData');
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    if (parsedData.courses) {
+                        // 檢查是否所有課程都是"未開始" (這表示資料損壞)
+                        const allNotStarted = parsedData.courses.every(course => course.status === '未開始');
+                        if (allNotStarted && parsedData.courses.length > 10) {
+                            console.log('偵測到損壞的 localStorage 資料，正在清理...');
+                            localStorage.removeItem('mathProgressData');
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.log('清理 localStorage 時發生錯誤，移除資料');
+                localStorage.removeItem('mathProgressData');
+                return true;
+            }
+        }
+
         // 合併已保存的資料到預設資料
         function mergeSavedData() {
             try {
+                // 首先清理損壞的資料
+                const wasCleared = clearCorruptedData();
+                if (wasCleared) {
+                    console.log('已清理損壞的資料，將使用預設狀態');
+                    return courseData;
+                }
+                
                 const savedData = localStorage.getItem('mathProgressData');
                 if (!savedData) {
                     return courseData;
