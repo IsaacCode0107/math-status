@@ -488,6 +488,10 @@
                     // 調試：顯示每個課程的狀態
                     if (courseIndex < 5) { // 只顯示前5個課程的詳細資訊
                         console.log(`生成 HTML 時課程 ${course.code} 的狀態:`, course.status);
+                        console.log(`  HTML 選項檢查:`);
+                        console.log(`    未開始 selected: ${course.status === '未開始' ? 'selected' : ''}`);
+                        console.log(`    進行中 selected: ${course.status === '進行中' ? 'selected' : ''}`);
+                        console.log(`    已完成 selected: ${course.status === '已完成' ? 'selected' : ''}`);
                     }
                     
                     row.innerHTML = `
