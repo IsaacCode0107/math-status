@@ -429,39 +429,18 @@
                     mergedData[chapterName].forEach(course => {
                         const savedCourse = savedCourseMap[course.code];
                         if (savedCourse) {
-                            // 調試前3個匹配的課程
-                            if (matchedCount < 3) {
-                                console.log(`調試課程 ${course.code}:`);
-                                console.log(`  原始狀態: "${course.status}"`);
-                                console.log(`  保存資料:`, savedCourse);
-                                console.log(`  savedCourse.status !== undefined:`, savedCourse.status !== undefined);
-                            }
-                            
-                            const oldStatus = course.status;
                             // 更新課程資料
                             course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
                             course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
                             course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
-                            
-                            if (matchedCount < 3) {
-                                console.log(`  更新後狀態: "${course.status}"`);
-                                console.log(`  狀態實際改變: ${oldStatus !== course.status}`);
-                            }
                             matchedCount++;
                         }
                     });
                 });
                 
-                console.log(`資料合併完成: ${matchedCount}/${parsedData.courses.length} 課程已更新`);
-                
-                // 驗證合併結果 - 檢查前幾個課程的狀態
-                const firstChapter = Object.keys(mergedData)[0];
-                console.log('合併後前3個課程狀態:');
-                for (let i = 0; i < Math.min(3, mergedData[firstChapter].length); i++) {
-                    const course = mergedData[firstChapter][i];
-                    console.log(`  ${course.code}: ${course.status}`);
+                if (matchedCount > 0) {
+                    console.log(`資料合併完成: ${matchedCount}/${parsedData.courses.length} 課程已更新`);
                 }
-                
                 return mergedData;
             } catch (error) {
                 console.error('合併資料失敗:', error);
@@ -476,14 +455,6 @@
             
             // 獲取合併後的資料（包含已保存的進度）
             const displayData = mergeSavedData();
-            
-            // 驗證 displayData 的前3個課程狀態
-            const firstChapter = Object.keys(displayData)[0];
-            console.log('initializeTable 中前3個課程狀態:');
-            for (let i = 0; i < Math.min(3, displayData[firstChapter].length); i++) {
-                const course = displayData[firstChapter][i];
-                console.log(`  ${course.code}: ${course.status}`);
-            }
             
             let globalChapterIndex = 1;
             
