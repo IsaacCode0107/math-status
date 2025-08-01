@@ -445,6 +445,10 @@
             // 獲取合併後的資料（包含已保存的進度）
             const displayData = mergeSavedData();
             
+            // 調試：檢查 displayData 是否包含正確的已保存狀態
+            console.log('initializeTable 中 displayData 的第一個課程:', displayData[Object.keys(displayData)[0]][0]);
+            console.log('initializeTable 中 displayData 的第二個課程:', displayData[Object.keys(displayData)[0]][1]);
+            
             let globalChapterIndex = 1;
             
             Object.keys(displayData).forEach(chapterName => {
