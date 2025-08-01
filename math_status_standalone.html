@@ -374,76 +374,40 @@
         function mergeSavedData() {
             try {
                 const savedData = localStorage.getItem('mathProgressData');
-                console.log('讀取 localStorage 資料:', savedData ? '有資料' : '無資料');
                 if (!savedData) {
-                    console.log('沒有保存的資料，使用預設資料');
                     return courseData;
                 }
                 
                 const parsedData = JSON.parse(savedData);
                 if (!parsedData.courses) {
-                    console.log('保存的資料格式錯誤，沒有 courses 屬性');
                     return courseData;
                 }
-                
-                console.log('載入的保存資料總數:', parsedData.courses.length);
-                console.log('載入的第一筆資料範例:', parsedData.courses[0]);
-                console.log('載入的最後一筆資料範例:', parsedData.courses[parsedData.courses.length - 1]);
-                
-                // 顯示原始資料結構示例
-                console.log('原始 courseData 的第一個章節:', Object.keys(courseData)[0]);
-                console.log('原始 courseData 的第一個課程:', courseData[Object.keys(courseData)[0]][0]);
                 
                 // 創建一個深拷貝的 courseData
                 const mergedData = JSON.parse(JSON.stringify(courseData));
                 
-                // 調試：檢查深拷貝是否成功
-                console.log('深拷貝前 courseData 第一個課程:', courseData[Object.keys(courseData)[0]][0]);
-                console.log('深拷貝後 mergedData 第一個課程:', mergedData[Object.keys(mergedData)[0]][0]);
-                console.log('深拷貝引用檢查:', courseData === mergedData);
-                console.log('深拷貝課程引用檢查:', courseData[Object.keys(courseData)[0]][0] === mergedData[Object.keys(mergedData)[0]][0]);
+                // 創建課程代碼到保存資料的映射，提高查找效率
+                const savedCourseMap = {};
+                parsedData.courses.forEach(savedCourse => {
+                    savedCourseMap[savedCourse.code] = savedCourse;
+                });
                 
                 // 將已保存的資料合併到預設資料中
                 let matchedCount = 0;
-                let debugCount = 0;
-                parsedData.courses.forEach(savedCourse => {
-                    let found = false;
-                    debugCount++;
-                    if (debugCount <= 5) { // 只顯示前5筆的詳細資訊
-                        console.log(`正在處理第 ${debugCount} 筆資料:`, savedCourse);
-                    }
-                    
-                    Object.keys(mergedData).forEach(chapterName => {
-                        mergedData[chapterName].forEach(course => {
-                            if (course.code === savedCourse.code) {
-                                if (debugCount <= 5) {
-                                    console.log(`找到匹配課程: ${course.code}`);
-                                    console.log(`  原始狀態: "${course.status}"`);
-                                    console.log(`  保存狀態: "${savedCourse.status}"`);
-                                    console.log(`  undefined 檢查: savedCourse.status !== undefined = ${savedCourse.status !== undefined}`);
-                                }
-                                const oldStatus = course.status;
-                                course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
-                                course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
-                                course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
-                                if (debugCount <= 5) {
-                                    console.log(`  更新後狀態: "${course.status}"`);
-                                    console.log(`  狀態是否改變: ${oldStatus !== course.status}`);
-                                }
-                                found = true;
-                                matchedCount++;
-                            }
-                        });
+                Object.keys(mergedData).forEach(chapterName => {
+                    mergedData[chapterName].forEach(course => {
+                        const savedCourse = savedCourseMap[course.code];
+                        if (savedCourse) {
+                            // 更新課程資料
+                            course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
+                            course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
+                            course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
+                            matchedCount++;
+                        }
                     });
-                    if (!found && debugCount <= 10) {
-                        console.log('找不到匹配的課程代碼:', savedCourse.code, '狀態:', savedCourse.status);
-                    }
                 });
-                console.log('成功匹配的課程數量:', matchedCount, '/', parsedData.courses.length);
                 
-                // 檢查合併後的資料
-                console.log('合併後的第一個章節第一個課程:', mergedData[Object.keys(mergedData)[0]][0]);
-                
+                console.log(`資料合併完成: ${matchedCount}/${parsedData.courses.length} 課程已更新`);
                 return mergedData;
             } catch (error) {
                 console.error('合併資料失敗:', error);
@@ -458,15 +422,6 @@
             
             // 獲取合併後的資料（包含已保存的進度）
             const displayData = mergeSavedData();
-            
-            // 調試：檢查 displayData 是否包含正確的已保存狀態
-            console.log('initializeTable 中 displayData 的第一個課程:', displayData[Object.keys(displayData)[0]][0]);
-            console.log('initializeTable 中 displayData 的第二個課程:', displayData[Object.keys(displayData)[0]][1]);
-            
-            // 調試：檢查 displayData 與 courseData 的關係
-            console.log('displayData === courseData:', displayData === courseData);
-            console.log('displayData 第一個課程 === courseData 第一個課程:', 
-                        displayData[Object.keys(displayData)[0]][0] === courseData[Object.keys(courseData)[0]][0]);
             
             let globalChapterIndex = 1;
             
@@ -495,15 +450,6 @@
                 // 課程行
                 displayData[chapterName].forEach((course, courseIndex) => {
                     const row = document.createElement('tr');
-                    
-                    // 調試：顯示每個課程的狀態
-                    if (courseIndex < 5) { // 只顯示前5個課程的詳細資訊
-                        console.log(`生成 HTML 時課程 ${course.code} 的狀態:`, course.status);
-                        console.log(`  HTML 選項檢查:`);
-                        console.log(`    未開始 selected: ${course.status === '未開始' ? 'selected' : ''}`);
-                        console.log(`    進行中 selected: ${course.status === '進行中' ? 'selected' : ''}`);
-                        console.log(`    已完成 selected: ${course.status === '已完成' ? 'selected' : ''}`);
-                    }
                     
                     row.innerHTML = `
                         <td>${course.code}</td>
