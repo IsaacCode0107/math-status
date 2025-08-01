@@ -470,8 +470,13 @@
                 tbody.appendChild(summaryRow);
                 
                 // 課程行
-                displayData[chapterName].forEach(course => {
+                displayData[chapterName].forEach((course, courseIndex) => {
                     const row = document.createElement('tr');
+                    
+                    // 調試：顯示每個課程的狀態
+                    if (courseIndex < 5) { // 只顯示前5個課程的詳細資訊
+                        console.log(`生成 HTML 時課程 ${course.code} 的狀態:`, course.status);
+                    }
                     
                     row.innerHTML = `
                         <td>${course.code}</td>
