@@ -324,7 +324,7 @@
                 { code: "3-3_主題3", name: "克拉瑪公式(A版)", time: "12:17", status: "未開始", note: "線性方程組" },
                 { code: "3-3_主題4", name: "二元一次方程組的向量觀點(A版)", time: "12:02", status: "未開始", note: "向量觀點" }
             ],
-            "第四冊 第四章 空間向量": [
+            "第四冊 第一章 空間向量": [
                 { code: "1-1_主題1", name: "空間概念(A+B版)", time: "23:07", status: "未開始", note: "基礎概念" },
                 { code: "1-1_主題2", name: "二面角(A+B版)", time: "30:00", status: "未開始", note: "角度計算" },
                 { code: "1-1_主題3", name: "立體圖形計算(A+B版)", time: "14:50", status: "未開始", note: "立體幾何" },
@@ -341,7 +341,7 @@
                 { code: "數B補充", name: "如何判斷圓錐截痕", time: "04:27", status: "未開始", note: "幾何判斷" },
                 { code: "數B補充", name: "球面與經緯度", time: "20:27", status: "未開始", note: "球面幾何" }
             ],
-            "第四冊第五章 空間的平面與直線(A版)": [
+            "第四冊第二章 空間的平面與直線(A版)": [
                 { code: "2-1_主題1", name: "平面方程式", time: "24:59", status: "未開始", note: "方程建立" },
                 { code: "2-1_主題2", name: "平面的截距式", time: "18:42", status: "未開始", note: "截距表示" },
                 { code: "2-1_主題3", name: "平面的夾角", time: "09:30", status: "未開始", note: "角度計算" },
@@ -351,12 +351,12 @@
                 { code: "2-2_主題3", name: "點與直線", time: "06:50", status: "未開始", note: "位置關係" },
                 { code: "2-2_主題4", name: "直線與直線", time: "39:55", status: "未開始", note: "線線關係" }
             ],
-            "第四冊 第六章 條件機率(A+B版)": [
+            "第四冊 第三章 條件機率(A+B版)": [
                 { code: "3-1~3-2_主題1", name: "條件機率", time: "23:37", status: "未開始", note: "機率計算" },
                 { code: "3-2_主題2", name: "獨立事件", time: "30:05", status: "未開始", note: "事件獨立性" },
                 { code: "3-3_主題1", name: "貝氏定理", time: "27:36", status: "未開始", note: "定理應用" }
             ],
-            "第四冊 第七章 矩陣": [
+            "第四冊 第四章 矩陣": [
                 { code: "4-1_主題1", name: "高斯消去法(A版)", time: "37:19", status: "未開始", note: "解方程組" },
                 { code: "4-2_主題1", name: "矩陣的加減法(A+B版)", time: "11:50", status: "未開始", note: "基本運算" },
                 { code: "4-2_主題2", name: "矩陣的乘法(A+B版)", time: "21:19", status: "未開始", note: "乘法運算" },
@@ -550,12 +550,18 @@
 
         // 更新備註
         function updateNote(input) {
+            // 標記用戶已互動
+            userHasInteracted = true;
+            
             saveProgress(); // 自動保存進度
             showNotification('備註已更新！');
         }
 
         // 更新完成日期
         function updateDate(input) {
+            // 標記用戶已互動
+            userHasInteracted = true;
+            
             saveProgress(); // 自動保存進度
             showNotification('日期已更新！');
         }
@@ -593,6 +599,9 @@
 
         // 更新狀態
         function updateStatus(select) {
+            // 標記用戶已互動
+            userHasInteracted = true;
+            
             updateSelectColor(select);
 
             const row = select.closest('tr');
@@ -875,9 +884,15 @@
             console.log('應用程式初始化完成');
         }
 
-        // 保存進度 (standalone version)
+        // 保存進度 (standalone version) - 改進版本
         function saveProgress() {
             try {
+                // 檢查是否允許保存
+                if (isPageJustLoaded || !saveEnabled) {
+                    console.log('保存被阻止：頁面剛載入或保存功能未啟用');
+                    return;
+                }
+                
                 const courses = [];
                 const selects = document.querySelectorAll('.status-select');
                 
@@ -900,6 +915,23 @@
                     }
                 });
 
+                // 數據驗證：檢查是否合理
+                const notStartedCount = courses.filter(c => c.status === '未開始').length;
+                const totalCount = courses.length;
+                const notStartedRatio = notStartedCount / totalCount;
+                
+                // 如果超過90%的課程都是"未開始"，可能是錯誤保存
+                if (notStartedRatio > 0.9 && totalCount > 20) {
+                    console.warn('檢測到異常數據：過多課程狀態為"未開始"，可能是錯誤保存');
+                    console.log(`統計：${notStartedCount}/${totalCount} (${(notStartedRatio * 100).toFixed(1)}%) 課程為未開始狀態`);
+                    
+                    // 如果用戶還沒有真正互動過，則阻止保存
+                    if (!userHasInteracted) {
+                        console.log('保存被阻止：用戶尚未進行真實互動，疑似初始錯誤保存');
+                        return;
+                    }
+                }
+
                 const data = {
                     timestamp: new Date().toISOString(),
                     courses: courses
@@ -907,7 +939,7 @@
 
                 localStorage.setItem('mathProgressData', JSON.stringify(data));
                 console.log('進度已保存到瀏覽器本地存儲', courses.length, '筆資料');
-                console.log('保存的第一筆資料範例:', courses[0]);
+                console.log(`保存統計：未開始 ${notStartedCount}，其他 ${totalCount - notStartedCount}`);
             } catch (error) {
                 console.error('保存進度失敗:', error);
             }
@@ -952,10 +984,22 @@
             }
         }
 
+        // 保存控制變量
+        let isPageJustLoaded = true;
+        let saveEnabled = false;
+        let userHasInteracted = false;
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM 載入完成，開始初始化...');
             initializeTable();
             initApp();
+            
+            // 頁面載入後3秒才啟用保存功能，防止初始錯誤保存
+            setTimeout(() => {
+                isPageJustLoaded = false;
+                saveEnabled = true;
+                console.log('保存功能已啟用');
+            }, 3000);
         });
 
         // 顯示通知函數
