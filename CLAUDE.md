@@ -100,7 +100,7 @@ Options:
 3. ❌ NO - Skip GitHub setup (local git only)
 
 [Wait for user choice before proceeding]
-```
+```bash
 
 ### 🚀 **OPTION 1: CREATE NEW GITHUB REPO**
 
@@ -279,17 +279,21 @@ project-root/
 └── output/                # Generated output files
 ```
 
-# Step 2: Initialize git repository  
+### Step 2: Initialize git repository
+
+```bash
 git init
 git config --local user.name "Claude Code"
-git config --local user.email "claude@anthropic.com"
+git config --local user.email "<claude@anthropic.com>"
 
 # Step 3: Create essential files
 # (Claude Code will create these using Write tool)
 ```
 
 #### 🔹 **AI/ML PROJECT STRUCTURE**
-```
+
+```text
+
 project-root/
 ├── CLAUDE.md              # Essential rules for Claude Code
 ├── README.md              # Project documentation
@@ -343,6 +347,7 @@ project-root/
 ├── output/                # Generated output files
 ├── logs/                  # Log files
 └── tmp/                   # Temporary files
+
 ```
 
 ### 🔧 **LANGUAGE-SPECIFIC ADAPTATIONS**
@@ -660,6 +665,7 @@ fi
    🎯 Template by Chang Ho Chien | HC AI 說人話channel | v1.0.0
    📺 Tutorial: https://youtu.be/8Q1bRZaHH24
    ```
+
 2. ✅ **Delete template file**: `rm CLAUDE_TEMPLATE.md`
 3. ✅ **Verify CLAUDE.md**: Ensure it exists with user's project details
 4. ✅ **Check structure**: Confirm all directories created
@@ -681,6 +687,7 @@ fi
    2. Commit after each feature
    3. Follow CLAUDE.md rules
    ```
+
 9. ✅ **Begin following CLAUDE.md rules immediately**
 
 ## 🏗️ PROJECT OVERVIEW
