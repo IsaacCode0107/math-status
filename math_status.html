@@ -1,0 +1,1174 @@
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數學課程進度追蹤Excel表</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Removed SQL.js dependency - using backend SQLite API instead -->
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn.success {
+            background: #27ae60;
+        }
+        .btn.success:hover {
+            background: #219a52;
+        }
+        .btn.warning {
+            background: #f39c12;
+        }
+        .btn.warning:hover {
+            background: #d68910;
+        }
+        .btn.danger {
+            background: #e74c3c;
+        }
+        .btn.danger:hover {
+            background: #c0392b;
+        }
+        
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .stats-panel.hidden {
+            display: none;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 10px;
+            border-radius: 6px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 4px 0;
+            font-size: 0.75em;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        .stat-number {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 2px 0;
+            line-height: 1;
+        }
+        .stat-unit {
+            font-size: 0.65em;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            font-size: 13px;
+        }
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid #d4d4d4;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        .excel-table th {
+            background-color: #217346;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        .excel-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .excel-table tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .chapter-row {
+            background-color: #4472c4 !important;
+            color: white;
+            font-weight: bold;
+        }
+        .chapter-summary-row {
+            background-color: #b4c7e7 !important;
+            font-weight: bold;
+            color: #1f4e79;
+        }
+        
+        .status-select {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background: white;
+            font-size: 12px;
+        }
+        .status-completed {
+            background-color: #d5e8d4;
+            color: #2d6a2d;
+        }
+        .status-pending {
+            background-color: #fff2cc;
+            color: #b8860b;
+        }
+        .status-not-started {
+            background-color: #f8cecc;
+            color: #8b0000;
+        }
+        
+        .progress-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+        .time-cell {
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #notification.show {
+            opacity: 1;
+        }
+        
+        .formula-info {
+            background: #e8f4f8;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 11px;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 數學課程進度追蹤Excel表 (第三冊 + 第四冊 + 選修數甲)</h1>
+        
+        <div class="controls">
+            <button class="btn success" onclick="generateExcel()">📥 Excel</button>
+            <button class="btn" onclick="importExcel()">📂 匯入Excel</button>
+            <button class="btn warning" onclick="exportData()">💾 匯出</button>
+            <button class="btn" onclick="importData()">📄 匯入</button>
+            <button class="btn danger" onclick="resetAllProgress()">🔄 重設</button>
+            <button class="btn" onclick="toggleStats()" id="statsToggle" title="切換統計顯示">📊 統計</button>
+            <button class="btn" onclick="manualSave()" title="手動保存">💾</button>
+            <button class="btn" onclick="manualLoad()" title="手動載入">📂</button>
+            <button class="btn" onclick="reloadTable()" title="重新載入表格">🔄 重載</button>
+            <button class="btn" onclick="exportServerData()" title="匯出伺服器資料">📦 匯出</button>
+            <button class="btn" onclick="showServerStats()" title="檢視伺服器統計">📊 伺服器</button>
+        </div>
+        
+        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="handleExcelImport(event)">
+        <input type="file" id="dataFile" class="file-input" accept=".json" onchange="handleDataImport(event)">
+        
+        <div class="stats-panel" id="statsPanel" style="display: none;">
+            <div class="stat-card">
+                <h3>總課程數</h3>
+                <div class="stat-number" id="totalCourses">45</div>
+                <div class="stat-unit">堂課</div>
+            </div>
+            <div class="stat-card">
+                <h3>已完成</h3>
+                <div class="stat-number" id="completedCourses">5</div>
+                <div class="stat-unit">堂課</div>
+            </div>
+            <div class="stat-card">
+                <h3>完成率</h3>
+                <div class="stat-number" id="completionRate">11.1%</div>
+                <div class="stat-unit">進度</div>
+            </div>
+            <div class="stat-card">
+                <h3>預估剩餘時間</h3>
+                <div class="stat-number" id="remainingTime">17.1</div>
+                <div class="stat-unit">小時</div>
+            </div>
+        </div>
+        
+        <div class="formula-info" style="display: none;">
+            💡 <strong>Excel功能：</strong> 
+            狀態欄位使用下拉選單，統計自動計算。Excel公式：完成率=COUNTIF(狀態欄,"已完成")/總數*100
+        </div>
+        
+        <table class="excel-table" id="courseTable">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">課程編號</th>
+                    <th style="width: 250px;">課程名稱</th>
+                    <th style="width: 80px;">時長</th>
+                    <th style="width: 100px;">狀態</th>
+                    <th style="width: 150px;">備註</th>
+                    <th style="width: 100px;">完成日期</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- 動態生成內容 -->
+            </tbody>
+        </table>
+        
+        <div id="notification">操作完成！</div>
+
+        <!-- Add input and button for saving data -->
+        <div>
+          <input type="text" id="dataInput" placeholder="Enter data to save">
+          <button class="btn" onclick="saveData()">Save Data</button>
+        </div>
+
+        <!-- Add a section to display fetched data -->
+        <div>
+          <h3>Saved Data:</h3>
+          <ul id="dataList"></ul>
+        </div>
+    </div>
+
+    <script>
+        // 課程資料結構 - 包含第三冊和第四冊
+        const courseData = {
+            "第三冊 第一章 三角函數": [
+                { code: "1-1_主題1", name: "弧度量(A+B版)", time: "40:39", status: "已完成", note: "基礎概念" },
+                { code: "1-1_主題2", name: "扇形弧長與面積(A+B版)", time: "15:20", status: "已完成", note: "應用計算" },
+                { code: "1-1_主題3", name: "三角函數的圖形(A+B版)", time: "01:12:32", status: "已完成", note: "圖形分析" },
+                { code: "1-1_主題4", name: "三角方程式(A+B版)", time: "23:55", status: "進行中", note: "方程求解" },
+                { code: "1-1_主題5", name: "三角不等式(A+B版)", time: "14:26", status: "未開始", note: "不等式解法" },
+                { code: "1-1_主題6", name: "三角函數的極值(A+B版)", time: "03:37", status: "未開始", note: "極值問題" },
+                { code: "1-1_主題7", name: "三角函數的應用(A+B版)", time: "13:39", status: "未開始", note: "實際應用" },
+                { code: "1-2_主題1", name: "和差角公式(A版)", time: "01:19:38", status: "未開始", note: "公式推導" },
+                { code: "1-2_主題2", name: "平方差(課外補充)(A版)", time: "06:08", status: "未開始", note: "補充內容" },
+                { code: "1-2_主題3", name: "正切的和差角(A版)", time: "27:06", status: "未開始", note: "正切公式" },
+                { code: "1-2_主題4", name: "二倍角(A版)", time: "28:12", status: "未開始", note: "倍角公式" },
+                { code: "1-2_主題5", name: "二倍角(A版)", time: "21:51", status: "未開始", note: "延續內容" },
+                { code: "1-2_主題6", name: "半角公式(A版)", time: "26:03", status: "未開始", note: "半角推導" },
+                { code: "1-3_主題1", name: "正餘弦的疊合(A版)", time: "40:16", status: "未開始", note: "函數疊合" },
+                { code: "1-3_主題2", name: "正餘弦疊合的極值(A版)", time: "44:27", status: "未開始", note: "極值計算" },
+                { code: "1-3_主題3", name: "正餘弦疊合的應用問題(A版)", time: "28:05", status: "未開始", note: "應用題型" }
+            ],
+            "第三冊 第二章 指數與對數函數": [
+                { code: "2-1_主題1", name: "指數函數的圖形(A+B版)", time: "42:24", status: "未開始", note: "圖形性質" },
+                { code: "2-1_主題2", name: "指數比大小(A+B版)", time: "09:01", status: "未開始", note: "大小比較" },
+                { code: "2-1_主題3", name: "指數方程式與不等式(A+B版)", time: "09:01", status: "未開始", note: "方程不等式" },
+                { code: "2-1_主題4", name: "指數函數的極值(A+B版)", time: "11:03", status: "未開始", note: "極值問題" },
+                { code: "2-1_主題5", name: "指數函數的應用(A+B版)", time: "08:15", status: "未開始", note: "實際應用" },
+                { code: "2-2_主題1", name: "對數的定義(A+B版)", time: "14:32", status: "未開始", note: "基本定義" },
+                { code: "2-2_主題2", name: "對數律(A+B版)", time: "01:04:23", status: "未開始", note: "對數運算律" },
+                { code: "2-2_主題3", name: "對數方程(A+B版)", time: "21:12", status: "未開始", note: "方程求解" },
+                { code: "2-2_主題4", name: "科學記號與常用對數(A+B版)", time: "24:07", status: "未開始", note: "科學應用" },
+                { code: "2-3_主題1", name: "對數函數的圖形(A+B版)", time: "44:59", status: "未開始", note: "圖形分析" },
+                { code: "2-3_主題2", name: "對數比大小(A+B版)", time: "12:06", status: "未開始", note: "大小比較" },
+                { code: "2-3_主題3", name: "對數不等式(A+B版)", time: "23:56", status: "未開始", note: "不等式解法" },
+                { code: "2-3_主題4", name: "對數求極值(A+B版)", time: "07:08", status: "未開始", note: "極值計算" },
+                { code: "2-3_主題5", name: "對數應用問題(A+B版)", time: "33:57", status: "已完成", note: "應用題型" }
+            ],
+            "第三冊 第三章 平面向量": [
+                { code: "3-1_主題1", name: "平面向量的幾何表示法(A+B版)", time: "05:53", status: "未開始", note: "幾何表示" },
+                { code: "3-1_主題2", name: "平面向量的座標表示法(A+B版)", time: "14:51", status: "未開始", note: "座標表示" },
+                { code: "3-1_主題3", name: "向量的運算(A+B版)", time: "24:45", status: "已完成", note: "基本運算" },
+                { code: "3-1_主題4", name: "向量的線性組合(A+B版)", time: "28:52", status: "未開始", note: "線性組合" },
+                { code: "3-1_主題5", name: "共線理論(A+B版)", time: "35:00", status: "未開始", note: "共線性質" },
+                { code: "3-1_主題6", name: "面積比(A+B版)", time: "07:25", status: "未開始", note: "面積計算" },
+                { code: "3-1_主題7", name: "斜座標(A+B版)", time: "19:00", status: "未開始", note: "座標系統" },
+                { code: "3-2_主題1", name: "內積(A+B版)", time: "26:00", status: "未開始", note: "內積運算" },
+                { code: "3-2_主題2", name: "內積的性質(A+B版)", time: "14:19", status: "未開始", note: "性質探討" },
+                { code: "3-2_主題3", name: "正射影(A+B版)", time: "26:11", status: "未開始", note: "投影計算" },
+                { code: "3-2_主題4", name: "直線參數式(A+B版)", time: "27:25", status: "未開始", note: "參數方程" },
+                { code: "3-2_主題5", name: "直線的夾角(A+B版)", time: "10:36", status: "未開始", note: "角度計算" },
+                { code: "3-2_主題6", name: "柯西不等式(A版)", time: "26:59", status: "未開始", note: "不等式理論" },
+                { code: "3-3_主題1", name: "向量的面積公式(A版)", time: "18:09", status: "未開始", note: "面積公式" },
+                { code: "3-3_主題2", name: "二階行列式(A版)", time: "29:15", status: "未開始", note: "行列式計算" },
+                { code: "3-3_主題3", name: "克拉瑪公式(A版)", time: "12:17", status: "未開始", note: "線性方程組" },
+                { code: "3-3_主題4", name: "二元一次方程組的向量觀點(A版)", time: "12:02", status: "未開始", note: "向量觀點" }
+            ],
+            "第四冊 第四章 空間向量": [
+                { code: "1-1_主題1", name: "空間概念(A+B版)", time: "23:07", status: "未開始", note: "基礎概念" },
+                { code: "1-1_主題2", name: "二面角(A+B版)", time: "30:00", status: "未開始", note: "角度計算" },
+                { code: "1-1_主題3", name: "立體圖形計算(A+B版)", time: "14:50", status: "未開始", note: "立體幾何" },
+                { code: "1-2_主題1", name: "空間坐標系(A+B版)", time: "32:39", status: "未開始", note: "坐標系統" },
+                { code: "1-2_主題2", name: "空間向量的表示法(A+B版)", time: "25:52", status: "未開始", note: "向量表示" },
+                { code: "1-2_主題3", name: "空間向量的線性組合(A+B版)", time: "11:01", status: "未開始", note: "線性運算" },
+                { code: "1-3_主題1", name: "空間向量的內積(A版)", time: "21:25", status: "未開始", note: "內積計算" },
+                { code: "1-3_主題2", name: "柯西不等式(A版)", time: "21:58", status: "未開始", note: "不等式" },
+                { code: "1-4_主題1", name: "外積(A版)", time: "18:27", status: "未開始", note: "外積運算" },
+                { code: "補充", name: "內積與外積比較", time: "06:34", status: "未開始", note: "概念比較" },
+                { code: "1-4_主題2", name: "空間向量求體積(A版)", time: "04:57", status: "未開始", note: "體積計算" },
+                { code: "1-4_主題3", name: "三階行列式(A版)", time: "24:50", status: "未開始", note: "行列式" },
+                { code: "1-4_主題4", name: "三階行列式的應用(A版)", time: "12:44", status: "未開始", note: "應用計算" },
+                { code: "數B補充", name: "如何判斷圓錐截痕", time: "04:27", status: "未開始", note: "幾何判斷" },
+                { code: "數B補充", name: "球面與經緯度", time: "20:27", status: "未開始", note: "球面幾何" }
+            ],
+            "第四冊第五章 空間的平面與直線(A版)": [
+                { code: "2-1_主題1", name: "平面方程式", time: "24:59", status: "未開始", note: "方程建立" },
+                { code: "2-1_主題2", name: "平面的截距式", time: "18:42", status: "未開始", note: "截距表示" },
+                { code: "2-1_主題3", name: "平面的夾角", time: "09:30", status: "未開始", note: "角度計算" },
+                { code: "2-1_主題4", name: "點到平面的距離", time: "24:21", status: "未開始", note: "距離公式" },
+                { code: "2-2_主題1", name: "直線方程式", time: "37:02", status: "未開始", note: "方程建立" },
+                { code: "2-2_主題2", name: "直線與平面", time: "29:32", status: "未開始", note: "關係分析" },
+                { code: "2-2_主題3", name: "點與直線", time: "06:50", status: "未開始", note: "位置關係" },
+                { code: "2-2_主題4", name: "直線與直線", time: "39:55", status: "未開始", note: "線線關係" }
+            ],
+            "第四冊 第六章 條件機率(A+B版)": [
+                { code: "3-1~3-2_主題1", name: "條件機率", time: "23:37", status: "未開始", note: "機率計算" },
+                { code: "3-2_主題2", name: "獨立事件", time: "30:05", status: "未開始", note: "事件獨立性" },
+                { code: "3-3_主題1", name: "貝氏定理", time: "27:36", status: "未開始", note: "定理應用" }
+            ],
+            "第四冊 第七章 矩陣": [
+                { code: "4-1_主題1", name: "高斯消去法(A版)", time: "37:19", status: "未開始", note: "解方程組" },
+                { code: "4-2_主題1", name: "矩陣的加減法(A+B版)", time: "11:50", status: "未開始", note: "基本運算" },
+                { code: "4-2_主題2", name: "矩陣的乘法(A+B版)", time: "21:19", status: "未開始", note: "乘法運算" },
+                { code: "4-2_主題3", name: "矩陣的高次方(A+B版)", time: "24:19", status: "未開始", note: "冪次計算" },
+                { code: "4-2_主題4", name: "反方陣(A+B版)", time: "46:26", status: "未開始", note: "逆矩陣" },
+                { code: "4-3_主題1", name: "轉移矩陣(A版)", time: "38:11", status: "未開始", note: "狀態轉移" },
+                { code: "4-3_主題2~3", name: "平面線性變換(A版)", time: "10:19", status: "未開始", note: "幾何變換" },
+                { code: "4-3_主題4~5", name: "伸縮與推移矩陣(A版)", time: "13:58", status: "未開始", note: "變換矩陣" },
+                { code: "4-3_主題6", name: "鏡射矩陣(A版)", time: "12:17", status: "未開始", note: "對稱變換" },
+                { code: "4-3_主題7", name: "旋轉矩陣(A版)", time: "24:45", status: "未開始", note: "旋轉變換" }
+            ]
+        };
+
+        // 初始化表格
+        function initializeTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            let globalChapterIndex = 1;
+            
+            Object.keys(courseData).forEach(chapterName => {
+                // 章節標題行 - 直接使用完整的章節名稱
+                const chapterRow = document.createElement('tr');
+                chapterRow.className = 'chapter-row';
+                
+                chapterRow.innerHTML = `
+                    <td colspan="6" style="text-align: center; font-size: 14px;">
+                        🔸 ${chapterName}
+                    </td>
+                `;
+                tbody.appendChild(chapterRow);
+                
+                // 章節統計行
+                const summaryRow = document.createElement('tr');
+                summaryRow.className = 'chapter-summary-row';
+                summaryRow.innerHTML = `
+                    <td colspan="6" style="text-align: center; padding: 8px;">
+                        <span id="ch${globalChapterIndex}_summary">載入中...</span>
+                    </td>
+                `;
+                tbody.appendChild(summaryRow);
+                
+                // 課程行
+                courseData[chapterName].forEach(course => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${course.code}</td>
+                        <td>${course.name}</td>
+                        <td class="time-cell">${course.time}</td>
+                        <td>
+                            <select class="status-select" onchange="updateStatus(this)" data-chapter="${globalChapterIndex}">
+                                <option value="未開始" ${course.status === '未開始' ? 'selected' : ''}>未開始</option>
+                                <option value="進行中" ${course.status === '進行中' ? 'selected' : ''}>進行中</option>
+                                <option value="已完成" ${course.status === '已完成' ? 'selected' : ''}>已完成</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="note-input" value="${course.note}" onchange="updateNote(this)" 
+                                   style="width: 100%; border: 1px solid #ddd; padding: 4px; border-radius: 3px;">
+                        </td>
+                        <td>
+                            <input type="date" class="date-input" value="" 
+                                   onchange="updateDate(this)" 
+                                   style="width: 100%; border: 1px solid #ddd; padding: 4px; border-radius: 3px;">
+                        </td>
+                    `;
+                    
+                    // 設置狀態顏色
+                    const select = row.querySelector('.status-select');
+                    updateSelectColor(select);
+                    
+                    tbody.appendChild(row);
+                });
+                
+                globalChapterIndex++;
+            });
+            
+            updateAllStatistics();
+        }
+
+        // 更新備註
+        function updateNote(input) {
+            saveProgressToServer(); // 自動保存進度到伺服器
+            showNotification('備註已更新！');
+        }
+
+        // 更新完成日期
+        function updateDate(input) {
+            saveProgressToServer(); // 自動保存進度到伺服器
+            showNotification('日期已更新！');
+        }
+
+        // 格式化日期為輸入欄位使用的格式 (YYYY-MM-DD)
+        function formatDateForInput(dateStr) {
+            if (!dateStr) return '';
+            try {
+                // 如果是 YYYY/MM/DD 格式，轉換為 YYYY-MM-DD
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                    }
+                }
+                return dateStr;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // 格式化日期為顯示格式 (YYYY/MM/DD)
+        function formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            try {
+                // 如果是 YYYY-MM-DD 格式，轉換為 YYYY/MM/DD
+                if (dateStr.includes('-')) {
+                    return dateStr.replace(/-/g, '/');
+                }
+                return dateStr;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        // 更新狀態
+        function updateStatus(select) {
+            updateSelectColor(select);
+
+            const row = select.closest('tr');
+            const dateInput = row.querySelector('.date-input');
+            if (select.value === '已完成' && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            } else if (select.value !== '已完成') {
+                dateInput.value = '';
+            }
+
+            updateAllStatistics();
+            saveProgressToServer(); // 自動保存進度到伺服器
+            showNotification('狀態已更新！');
+        }
+
+        // 更新下拉選單顏色
+        function updateSelectColor(select) {
+            select.className = 'status-select';
+            if (select.value === '已完成') {
+                select.classList.add('status-completed');
+            } else if (select.value === '進行中') {
+                select.classList.add('status-pending');
+            } else {
+                select.classList.add('status-not-started');
+            }
+        }
+
+        // 獲取當前日期
+        function getCurrentDate() {
+            return new Date().toLocaleDateString('zh-TW');
+        }
+
+        // 更新所有統計
+        function updateAllStatistics() {
+            const selects = document.querySelectorAll('.status-select');
+            let totalCourses = selects.length;
+            let completedCount = 0;
+            let inProgressCount = 0;
+            let totalMinutes = 0;
+            let completedMinutes = 0;
+            
+            // 計算章節統計
+            const chapterStats = {};
+            
+            selects.forEach(select => {
+                const chapter = select.dataset.chapter;
+                if (!chapterStats[chapter]) {
+                    chapterStats[chapter] = { total: 0, completed: 0, inProgress: 0, totalTime: 0 };
+                }
+                
+                chapterStats[chapter].total++;
+                
+                // 計算時間
+                const row = select.closest('tr');
+                const timeCell = row.querySelector('.time-cell');
+                const minutes = parseTimeToMinutes(timeCell.textContent);
+                totalMinutes += minutes;
+                chapterStats[chapter].totalTime += minutes;
+                
+                if (select.value === '已完成') {
+                    completedCount++;
+                    chapterStats[chapter].completed++;
+                    completedMinutes += minutes;
+                } else if (select.value === '進行中') {
+                    inProgressCount++;
+                    chapterStats[chapter].inProgress++;
+                }
+            });
+            
+            // 更新總體統計
+            const completionRate = totalCourses > 0 ? ((completedCount / totalCourses) * 100).toFixed(1) : 0;
+            const remainingTime = ((totalMinutes - completedMinutes) / 60).toFixed(1);
+            
+            document.getElementById('totalCourses').textContent = totalCourses;
+            document.getElementById('completedCourses').textContent = completedCount;
+            document.getElementById('completionRate').textContent = completionRate + '%';
+            document.getElementById('remainingTime').textContent = remainingTime;
+            
+            // 更新章節統計
+            Object.keys(chapterStats).forEach(chapter => {
+                const stats = chapterStats[chapter];
+                const hours = Math.floor(stats.totalTime / 60);
+                const mins = Math.round(stats.totalTime % 60);
+                const progress = ((stats.completed / stats.total) * 100).toFixed(1);
+                
+                const summaryElement = document.getElementById(`ch${chapter}_summary`);
+                if (summaryElement) {
+                    summaryElement.innerHTML = `
+                        📚 ${stats.total}堂 | ⏱️ ${hours}h${mins}m | 
+                        ✅ ${stats.completed}完成 | 🔄 ${stats.inProgress}進行中 | 
+                        📈 ${progress}%
+                    `;
+                }
+            });
+        }
+
+        // 解析時間為分鐘
+        function parseTimeToMinutes(timeStr) {
+            const parts = timeStr.split(':');
+            if (parts.length === 3) {
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]) + parseInt(parts[2]) / 60;
+            } else if (parts.length === 2) {
+                return parseInt(parts[0]) + parseInt(parts[1]) / 60;
+            }
+            return 0;
+        }
+
+        // 產生Excel檔案
+        function generateExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // 準備資料
+            const data = [];
+            
+            // 標題行
+            data.push(['章節', '課程編號', '課程名稱', '時長', '狀態', '備註', '完成日期']);
+            
+            // 課程資料
+            const rows = document.querySelectorAll('#tableBody tr');
+            rows.forEach(row => {
+                if (!row.classList.contains('chapter-row') && !row.classList.contains('chapter-summary-row')) {
+                    const cells = row.querySelectorAll('td, select');
+                    const statusSelect = row.querySelector('.status-select');
+                    const rowData = [
+                        cells[0].textContent.trim(),
+                        cells[1].textContent.trim(),
+                        cells[2].textContent.trim(),
+                        cells[3].textContent.trim(),
+                        statusSelect.value,
+                        cells[5].textContent.trim(),
+                        cells[6].textContent.trim()
+                    ];
+                    data.push(rowData);
+                }
+            });
+            
+            // 建立工作表
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // 設置欄寬
+            ws['!cols'] = [
+                { wch: 6 },   // 章節
+                { wch: 15 },  // 課程編號
+                { wch: 35 },  // 課程名稱
+                { wch: 10 },  // 時長
+                { wch: 12 },  // 狀態
+                { wch: 15 },  // 備註
+                { wch: 12 }   // 完成日期
+            ];
+            
+            // 新增統計工作表
+            const statsData = [
+                ['統計項目', '數值'],
+                ['總課程數', document.getElementById('totalCourses').textContent],
+                ['已完成課程', document.getElementById('completedCourses').textContent],
+                ['完成率', document.getElementById('completionRate').textContent],
+                ['預估剩餘時間(小時)', document.getElementById('remainingTime').textContent],
+                [],
+                ['狀態', '說明'],
+                ['已完成', '課程已學習完畢'],
+                ['進行中', '課程正在學習中'],
+                ['未開始', '課程尚未開始學習']
+            ];
+            
+            const statsWs = XLSX.utils.aoa_to_sheet(statsData);
+            statsWs['!cols'] = [{ wch: 15 }, { wch: 20 }];
+            
+            // 加入工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '課程進度');
+            XLSX.utils.book_append_sheet(wb, statsWs, '統計資料');
+            
+            // 下載Excel檔案
+            const fileName = `數學課程進度_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showNotification('Excel檔案已產生並下載！');
+        }
+
+        // 匯入Excel
+        function importExcel() {
+            document.getElementById('excelFile').click();
+        }
+
+        // 處理Excel匯入
+        function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // 跳過標題行，更新狀態
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row.length >= 5) {
+                            const courseCode = row[1];
+                            const status = row[4];
+                            const completedDate = row[6] || '';
+                            
+                            // 找到對應的行並更新
+                            const selects = document.querySelectorAll('.status-select');
+                            selects.forEach(select => {
+                                const tableRow = select.closest('tr');
+                                const codeCell = tableRow.querySelector('td:nth-child(2)');
+                                if (codeCell && codeCell.textContent.trim() === courseCode) {
+                                    select.value = status;
+                                    updateSelectColor(select);
+                                    
+                                    const dateCell = tableRow.querySelector('.completed-date');
+                                    if (dateCell) {
+                                        dateCell.textContent = completedDate;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    updateAllStatistics();
+                    saveProgressToServer();
+                    showNotification('Excel資料匯入成功！');
+                } catch (error) {
+                    alert('Excel檔案格式錯誤，請確認檔案內容正確！');
+                    console.error('Excel匯入錯誤:', error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 匯出資料到 localStorage
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                courses: []
+            };
+            
+            const selects = document.querySelectorAll('.status-select');
+            selects.forEach(select => {
+                const row = select.closest('tr');
+                if (!row.classList.contains('chapter-row') && !row.classList.contains('chapter-summary-row')) {
+                    const cells = row.querySelectorAll('td');
+                    const courseData = {
+                        chapter: cells[0].textContent.trim(),
+                        code: cells[1].textContent.trim(),
+                        name: cells[2].textContent.trim(),
+                        time: cells[3].textContent.trim(),
+                        status: select.value,
+                        note: row.querySelector('.note-input').value.trim(),
+                        completedDate: row.querySelector('.date-input').value.trim()
+                    };
+                    data.courses.push(courseData);
+                }
+            });
+
+            localStorage.setItem('mathProgressData', JSON.stringify(data));
+            showNotification('進度已保存到瀏覽器！');
+        }
+
+        // 載入資料從 localStorage
+        function loadJsonData() {
+            const data = localStorage.getItem('mathProgressData');
+            if (data) {
+                try {
+                    const parsedData = JSON.parse(data);
+                    if (parsedData.courses) {
+                        // 清空表格並重新初始化
+                        const tbody = document.getElementById('tableBody');
+                        tbody.innerHTML = '';
+                        initializeTable();
+
+                        // 更新表格中的每一行
+                        parsedData.courses.forEach(course => {
+                            const selects = document.querySelectorAll('.status-select');
+                            selects.forEach(select => {
+                                const row = select.closest('tr');
+                                const codeCell = row.querySelector('td:nth-child(1)');
+                                if (codeCell && codeCell.textContent.trim() === course.code) {
+                                    select.value = course.status || '未開始';
+                                    updateSelectColor(select);
+
+                                    const noteInput = row.querySelector('.note-input');
+                                    if (noteInput && course.note) {
+                                        noteInput.value = course.note;
+                                    }
+
+                                    const dateInput = row.querySelector('.date-input');
+                                    if (dateInput && course.completedDate) {
+                                        dateInput.value = course.completedDate;
+                                    }
+                                }
+                            });
+                        });
+
+                        updateAllStatistics();
+                        showNotification('進度已載入！');
+                    }
+                } catch (error) {
+                    console.error('載入進度失敗:', error);
+                }
+            }
+        }
+
+        // 伺服器 API 配置
+        const API_BASE_URL = 'http://localhost:3000';
+        
+        // 初始化應用程式
+        async function initApp() {
+            try {
+                console.log('正在初始化應用程式...');
+                await loadProgressFromServer();
+                console.log('應用程式初始化完成');
+            } catch (error) {
+                console.error('應用程式初始化失敗:', error);
+                // 如果伺服器無法連接，載入本地儲存的資料
+                loadProgress();
+            }
+        }
+
+        // 保存進度到伺服器
+        async function saveProgressToServer() {
+            try {
+                const courses = [];
+                const selects = document.querySelectorAll('.status-select');
+                
+                selects.forEach(select => {
+                    const row = select.closest('tr');
+                    if (!row.classList.contains('chapter-row') && !row.classList.contains('chapter-summary-row')) {
+                        const cells = row.querySelectorAll('td');
+                        const noteInput = row.querySelector('.note-input');
+                        const dateInput = row.querySelector('.date-input');
+
+                        const courseData = {
+                            code: cells[0].textContent.trim(),
+                            name: cells[1].textContent.trim(),
+                            time: cells[2].textContent.trim(),
+                            status: select.value,
+                            note: noteInput ? noteInput.value.trim() : '',
+                            completedDate: dateInput ? dateInput.value.trim() : ''
+                        };
+                        courses.push(courseData);
+                    }
+                });
+
+                console.log('正在保存進度到伺服器...', courses.length, '筆資料');
+                
+                const response = await fetch(`${API_BASE_URL}/save-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ courses })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('進度已成功保存到伺服器:', result);
+                    // 同時保存到 localStorage 作為備份
+                    saveProgress();
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('保存進度到伺服器失敗:', error);
+                // 如果伺服器保存失敗，至少保存到本地
+                saveProgress();
+                showNotification('伺服器保存失敗，已保存到本地儲存');
+            }
+        }
+
+        // 從伺服器載入進度
+        async function loadProgressFromServer() {
+            try {
+                console.log('正在從伺服器載入進度...');
+                const response = await fetch(`${API_BASE_URL}/progress`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('從伺服器載入的進度:', result);
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    result.data.forEach(course => {
+                        const selects = document.querySelectorAll('.status-select');
+                        selects.forEach(select => {
+                            const tableRow = select.closest('tr');
+                            const codeCell = tableRow.querySelector('td:first-child');
+                            
+                            if (codeCell && codeCell.textContent.trim() === course.code) {
+                                select.value = course.status || '未開始';
+                                updateSelectColor(select);
+                                
+                                const noteInput = tableRow.querySelector('.note-input');
+                                if (noteInput && course.note) {
+                                    noteInput.value = course.note;
+                                }
+                                
+                                const dateInput = tableRow.querySelector('.date-input');
+                                if (dateInput && course.completedDate) {
+                                    dateInput.value = course.completedDate;
+                                }
+                            }
+                        });
+                    });
+                    
+                    updateAllStatistics();
+                    showNotification(`成功從伺服器載入 ${result.data.length} 筆進度資料！`);
+                } else {
+                    console.log('伺服器中沒有進度資料，使用預設設定');
+                }
+            } catch (error) {
+                console.error('從伺服器載入進度失敗:', error);
+                throw error; // 讓上層處理錯誤
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM 載入完成，開始初始化...');
+            initializeTable();
+            await initApp();
+        });
+
+        window.addEventListener('beforeunload', function() {
+            // 同步保存到伺服器（注意：beforeunload 中的異步操作可能不會完成）
+            navigator.sendBeacon(`${API_BASE_URL}/save-progress`, JSON.stringify({
+                courses: getCurrentCoursesData()
+            }));
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                saveProgressToServer(); // 頁面隱藏時保存進度
+            }
+        });
+
+        // 顯示通知函數
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = message;
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // 手動保存函數
+        async function manualSave() {
+            try {
+                await saveProgressToServer();
+                showNotification('手動保存到伺服器完成！');
+            } catch (error) {
+                showNotification('手動保存失敗，已保存到本地');
+            }
+        }
+
+        // 手動載入函數
+        function manualLoad() {
+            loadProgress();
+            updateAllStatistics();
+            showNotification('手動載入完成！');
+        }
+
+        // 重設所有進度函數
+        function resetAllProgress() {
+            if (confirm('確定要重設所有進度嗎？此操作無法復原！')) {
+                const selects = document.querySelectorAll('.status-select');
+                selects.forEach(select => {
+                    select.value = '未開始';
+                    updateSelectColor(select);
+                });
+                
+                const noteInputs = document.querySelectorAll('.note-input');
+                noteInputs.forEach(input => {
+                    input.value = input.getAttribute('data-original') || '';
+                });
+                
+                const dateInputs = document.querySelectorAll('.date-input');
+                dateInputs.forEach(input => {
+                    input.value = '';
+                });
+                
+                updateAllStatistics();
+                saveProgressToServer();
+                showNotification('所有進度已重設！');
+            }
+        }
+
+        // 切換統計顯示函數
+        function toggleStats() {
+            const statsPanel = document.getElementById('statsPanel');
+            const toggleBtn = document.getElementById('statsToggle');
+            
+            if (statsPanel.style.display === 'none') {
+                statsPanel.style.display = 'grid';
+                toggleBtn.textContent = '📊 隱藏';
+            } else {
+                statsPanel.style.display = 'none';
+                toggleBtn.textContent = '📊 統計';
+            }
+        }
+
+        // 重新載入表格函數
+        function reloadTable() {
+            if (confirm('確定要重新載入表格嗎？未保存的更改將會丟失！')) {
+                initializeTable();
+                loadProgress();
+                updateAllStatistics();
+                showNotification('表格已重新載入！');
+            }
+        }
+
+        // 匯入資料函數
+        function importData() {
+            document.getElementById('dataFile').click();
+        }
+
+        // 處理資料匯入
+        function handleDataImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.courses) {
+                        // 清空當前資料
+                        localStorage.setItem('mathProgressData', JSON.stringify(data));
+                        
+                        // 重新載入頁面資料
+                        loadProgress();
+                        updateAllStatistics();
+                        showNotification('資料匯入成功！');
+                    } else {
+                        alert('檔案格式錯誤！');
+                    }
+                } catch (error) {
+                    alert('檔案格式錯誤，請確認是有效的JSON檔案！');
+                    console.error('資料匯入錯誤:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 匯出伺服器資料
+        async function exportServerData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/progress`);
+                if (response.ok) {
+                    const result = await response.json();
+                    const dataStr = JSON.stringify(result, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `math_progress_${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    showNotification('伺服器資料已匯出！');
+                } else {
+                    throw new Error('無法取得伺服器資料');
+                }
+            } catch (error) {
+                console.error('匯出伺服器資料失敗:', error);
+                showNotification('匯出伺服器資料失敗');
+            }
+        }
+        
+        // 顯示伺服器統計
+        async function showServerStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/stats`);
+                if (response.ok) {
+                    const stats = await response.json();
+                    const message = `伺服器統計資訊：\n總數: ${stats.total}\n已完成: ${stats.completed}\n進行中: ${stats.inProgress}\n未開始: ${stats.notStarted}\n完成率: ${stats.completionRate}%`;
+                    alert(message);
+                } else {
+                    throw new Error('無法取得統計資料');
+                }
+            } catch (error) {
+                console.error('取得伺服器統計失敗:', error);
+                alert('無法連接到伺服器');
+            }
+        }
+        
+        // 取得當前課程資料（用於 beforeunload）
+        function getCurrentCoursesData() {
+            const courses = [];
+            const selects = document.querySelectorAll('.status-select');
+            
+            selects.forEach(select => {
+                const row = select.closest('tr');
+                if (!row.classList.contains('chapter-row') && !row.classList.contains('chapter-summary-row')) {
+                    const cells = row.querySelectorAll('td');
+                    const noteInput = row.querySelector('.note-input');
+                    const dateInput = row.querySelector('.date-input');
+
+                    courses.push({
+                        code: cells[0].textContent.trim(),
+                        name: cells[1].textContent.trim(),
+                        time: cells[2].textContent.trim(),
+                        status: select.value,
+                        note: noteInput ? noteInput.value.trim() : '',
+                        completedDate: dateInput ? dateInput.value.trim() : ''
+                    });
+                }
+            });
+            
+            return courses;
+        }
+
+        // Save data to backend server
+        async function saveData() {
+          const data = document.getElementById('dataInput').value;
+          console.log('Data to be saved:', data); // Log data to be saved
+          if (!data) {
+            alert('Please enter some data to save.');
+            return;
+          }
+
+          try {
+            const response = await fetch('http://localhost:3000/save', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ data }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log('Save response:', result); // Log save response
+              alert(`Data saved with ID: ${result.id}`);
+            } else {
+              console.error('Failed to save data');
+              alert('Failed to save data.');
+            }
+          } catch (error) {
+            console.error('Error saving data:', error);
+            alert('An error occurred while saving data.');
+          }
+        }
+
+        async function fetchData() {
+          try {
+            const response = await fetch('http://localhost:3000/data');
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Fetched data:', data); // Log fetched data
+            const dataList = document.getElementById('dataList');
+            dataList.innerHTML = '';
+            data.forEach(item => {
+              const listItem = document.createElement('li');
+              listItem.textContent = `ID: ${item.id}, Data: ${item.data}`;
+              dataList.appendChild(listItem);
+            });
+          } catch (error) {
+            console.error('Error fetching data:', error);
+            alert('Failed to fetch data. Please check the backend server.');
+          }
+        }
+
+        // Fetch data on page load
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
