@@ -397,6 +397,12 @@
                 // 創建一個深拷貝的 courseData
                 const mergedData = JSON.parse(JSON.stringify(courseData));
                 
+                // 調試：檢查深拷貝是否成功
+                console.log('深拷貝前 courseData 第一個課程:', courseData[Object.keys(courseData)[0]][0]);
+                console.log('深拷貝後 mergedData 第一個課程:', mergedData[Object.keys(mergedData)[0]][0]);
+                console.log('深拷貝引用檢查:', courseData === mergedData);
+                console.log('深拷貝課程引用檢查:', courseData[Object.keys(courseData)[0]][0] === mergedData[Object.keys(mergedData)[0]][0]);
+                
                 // 將已保存的資料合併到預設資料中
                 let matchedCount = 0;
                 let debugCount = 0;
@@ -456,6 +462,11 @@
             // 調試：檢查 displayData 是否包含正確的已保存狀態
             console.log('initializeTable 中 displayData 的第一個課程:', displayData[Object.keys(displayData)[0]][0]);
             console.log('initializeTable 中 displayData 的第二個課程:', displayData[Object.keys(displayData)[0]][1]);
+            
+            // 調試：檢查 displayData 與 courseData 的關係
+            console.log('displayData === courseData:', displayData === courseData);
+            console.log('displayData 第一個課程 === courseData 第一個課程:', 
+                        displayData[Object.keys(displayData)[0]][0] === courseData[Object.keys(courseData)[0]][0]);
             
             let globalChapterIndex = 1;
             
