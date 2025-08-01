@@ -398,10 +398,24 @@
                     mergedData[chapterName].forEach(course => {
                         const savedCourse = savedCourseMap[course.code];
                         if (savedCourse) {
+                            // 調試前3個匹配的課程
+                            if (matchedCount < 3) {
+                                console.log(`調試課程 ${course.code}:`);
+                                console.log(`  原始狀態: "${course.status}"`);
+                                console.log(`  保存資料:`, savedCourse);
+                                console.log(`  savedCourse.status !== undefined:`, savedCourse.status !== undefined);
+                            }
+                            
+                            const oldStatus = course.status;
                             // 更新課程資料
                             course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
                             course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
                             course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
+                            
+                            if (matchedCount < 3) {
+                                console.log(`  更新後狀態: "${course.status}"`);
+                                console.log(`  狀態實際改變: ${oldStatus !== course.status}`);
+                            }
                             matchedCount++;
                         }
                     });
