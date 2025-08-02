@@ -269,8 +269,8 @@
     </div>
 
     <script>
-        // 課程資料結構 - 包含第三冊和第四冊
-        const courseData = {
+        // 課程資料結構 - 包含第三冊和第四冊 (僅作為預設值，實際使用會被 localStorage 覆蓋)
+        const originalCourseData = {
             "第三冊 第一章 三角函數": [
                 { code: "1-1_主題1", name: "弧度量(A+B版)", time: "40:39", status: "已完成", note: "基礎概念" },
                 { code: "1-1_主題2", name: "扇形弧長與面積(A+B版)", time: "15:20", status: "已完成", note: "應用計算" },
@@ -397,54 +397,77 @@
         // 合併已保存的資料到預設資料
         function mergeSavedData() {
             try {
-                // 首先清理損壞的資料
-                const wasCleared = clearCorruptedData();
-                if (wasCleared) {
-                    console.log('已清理損壞的資料，將使用預設狀態');
-                    return courseData;
-                }
-                
                 const savedData = localStorage.getItem('mathProgressData');
+                console.log('=== 開始資料合併程序 ===');
+                console.log('localStorage 中的原始資料:', savedData);
+                
                 if (!savedData) {
-                    return courseData;
+                    console.log('沒有找到保存的資料，使用預設設定');
+                    return originalCourseData;
                 }
                 
                 const parsedData = JSON.parse(savedData);
-                if (!parsedData.courses) {
-                    return courseData;
+                console.log('解析後的保存資料:', parsedData);
+                
+                if (!parsedData.courses || parsedData.courses.length === 0) {
+                    console.log('保存的資料無效，使用預設設定');
+                    return originalCourseData;
                 }
                 
-                // 創建一個深拷貝的 courseData
-                const mergedData = JSON.parse(JSON.stringify(courseData));
+                // 創建一個深拷貝的 originalCourseData
+                const mergedData = JSON.parse(JSON.stringify(originalCourseData));
+                
+                // 檢查特定課程的狀態
+                console.log('1-1_主題1 在預設資料中的狀態:', mergedData["第三冊 第一章 三角函數"][0].status);
+                console.log('1-1_主題2 在預設資料中的狀態:', mergedData["第三冊 第一章 三角函數"][1].status);
                 
                 // 創建課程代碼到保存資料的映射，提高查找效率
                 const savedCourseMap = {};
                 parsedData.courses.forEach(savedCourse => {
-                    savedCourseMap[savedCourse.code] = savedCourse;
+                    if (savedCourse.code) {
+                        savedCourseMap[savedCourse.code] = savedCourse;
+                        if (savedCourse.code === '1-1_主題1' || savedCourse.code === '1-1_主題2') {
+                            console.log(`保存的 ${savedCourse.code} 狀態:`, savedCourse.status);
+                        }
+                    }
                 });
+                
+                console.log('開始合併資料...');
+                console.log('保存的課程數量:', parsedData.courses.length);
+                console.log('保存的課程代碼:', Object.keys(savedCourseMap));
                 
                 // 將已保存的資料合併到預設資料中
                 let matchedCount = 0;
                 Object.keys(mergedData).forEach(chapterName => {
-                    mergedData[chapterName].forEach(course => {
+                    mergedData[chapterName].forEach((course, index) => {
                         const savedCourse = savedCourseMap[course.code];
                         if (savedCourse) {
-                            // 更新課程資料
-                            course.status = savedCourse.status !== undefined ? savedCourse.status : course.status;
+                            const oldStatus = course.status;
+                            // 更新課程資料，優先使用保存的資料
+                            course.status = savedCourse.status || course.status;
                             course.note = savedCourse.note !== undefined ? savedCourse.note : course.note;
                             course.completedDate = savedCourse.completedDate !== undefined ? savedCourse.completedDate : '';
                             matchedCount++;
+                            
+                            if (course.code === '1-1_主題1' || course.code === '1-1_主題2') {
+                                console.log(`*** 重要更新 *** ${course.code}: ${oldStatus} -> ${course.status}`);
+                            }
                         }
                     });
                 });
                 
-                if (matchedCount > 0) {
-                    console.log(`資料合併完成: ${matchedCount}/${parsedData.courses.length} 課程已更新`);
-                }
+                // 再次檢查特定課程的狀態
+                console.log('合併後 1-1_主題1 狀態:', mergedData["第三冊 第一章 三角函數"][0].status);
+                console.log('合併後 1-1_主題2 狀態:', mergedData["第三冊 第一章 三角函數"][1].status);
+                
+                console.log(`資料合併完成: ${matchedCount}/${parsedData.courses.length} 課程已更新`);
+                console.log('=== 資料合併程序結束 ===');
                 return mergedData;
             } catch (error) {
                 console.error('合併資料失敗:', error);
-                return courseData;
+                // 如果合併失敗，清除可能損壞的資料
+                localStorage.removeItem('mathProgressData');
+                return originalCourseData;
             }
         }
 
@@ -965,12 +988,12 @@
             initializeTable();
             initApp();
             
-            // 頁面載入後3秒才啟用保存功能，防止初始錯誤保存
+            // 頁面載入後1秒就啟用保存功能，縮短等待時間
             setTimeout(() => {
                 isPageJustLoaded = false;
                 saveEnabled = true;
                 console.log('保存功能已啟用');
-            }, 3000);
+            }, 1000);
         });
 
         // 顯示通知函數
@@ -996,6 +1019,43 @@
             initializeTable(); // 重新初始化表格，會自動載入已保存的資料
             showNotification('手動載入完成！');
         }
+
+        // 調試函數：清除 localStorage 並重新載入
+        function debugClearAndReload() {
+            localStorage.removeItem('mathProgressData');
+            console.log('localStorage 已清除');
+            initializeTable();
+            showNotification('localStorage 已清除並重新載入！');
+        }
+
+        // 調試函數：檢查 localStorage 狀態
+        function debugCheckStorage() {
+            const data = localStorage.getItem('mathProgressData');
+            console.log('=== localStorage 調試資訊 ===');
+            console.log('原始資料:', data);
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    console.log('解析後資料:', parsed);
+                    if (parsed.courses) {
+                        const course1 = parsed.courses.find(c => c.code === '1-1_主題1');
+                        const course2 = parsed.courses.find(c => c.code === '1-1_主題2');
+                        console.log('1-1_主題1 保存狀態:', course1 ? course1.status : '未找到');
+                        console.log('1-1_主題2 保存狀態:', course2 ? course2.status : '未找到');
+                    }
+                } catch (e) {
+                    console.error('解析錯誤:', e);
+                }
+            } else {
+                console.log('沒有保存的資料');
+            }
+            console.log('=== 調試資訊結束 ===');
+        }
+
+        // 將調試函數暴露到全域，方便在控制台使用
+        window.debugClearAndReload = debugClearAndReload;
+        window.debugCheckStorage = debugCheckStorage;
+        window.mergeSavedData = mergeSavedData;
 
         // 重設所有進度函數
         function resetAllProgress() {
